@@ -24,19 +24,11 @@ jobs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
-      # An app token, not GITHUB_TOKEN, so the release PR still triggers CI.
-      - name: Create GitHub App Token
-        uses: actions/create-github-app-token@v3
-        id: github-app-token
-        with:
-          client-id: ${{ vars.GH_APP_CLIENT_ID }}
-          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
-
       - name: Run release automation
         id: release
         uses: googleapis/release-please-action@v5
         with:
-          token: ${{ steps.github-app-token.outputs.token }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
