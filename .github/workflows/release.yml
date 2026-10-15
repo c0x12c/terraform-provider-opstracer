@@ -17,6 +17,8 @@ jobs:
   goreleaser:
     runs-on: ubuntu-latest
     if: github.repository_owner == 'c0x12c'
+    env:
+      HAS_GPG_KEY: ${{ secrets.GPG_PRIVATE_KEY != '' }}
     steps:
       - name: Checkout tag
         uses: actions/checkout@v7
@@ -28,7 +30,9 @@ jobs:
         with:
           go-version-file: go.mod
 
+      # Signing is only required by the public Terraform Registry; without a key the release is unsigned.
       - name: Import GPG key
+        if: env.HAS_GPG_KEY == 'true'
         id: import-gpg
         uses: crazy-max/ghaction-import-gpg@v7
         with:
@@ -39,7 +43,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v7
         with:
           version: '~> v2'
-          args: release --clean
+          args: release --clean ${{ env.HAS_GPG_KEY != 'true' && '--skip=sign' || '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GPG_FINGERPRINT: ${{ steps.import-gpg.outputs.fingerprint }}
