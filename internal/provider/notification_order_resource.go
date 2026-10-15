@@ -55,11 +55,13 @@ func (r *notificationOrderResource) Schema(_ context.Context, _ resource.SchemaR
 			"destroying it only removes it from state.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
+				Description:   "Always `notification_order`.",
 				Computed:      true,
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"enabled": schema.BoolAttribute{
-				Required: true,
+				Description: "Whether the custom order is used. When false, the default order applies.",
+				Required:    true,
 			},
 			"tiers": schema.ListNestedAttribute{
 				Required:    true,
@@ -74,10 +76,11 @@ func (r *notificationOrderResource) Schema(_ context.Context, _ resource.SchemaR
 							Validators:  []validator.List{listvalidator.SizeAtLeast(1)},
 						},
 						"delay_seconds": schema.Int64Attribute{
-							Optional:   true,
-							Computed:   true,
-							Default:    int64default.StaticInt64(0),
-							Validators: []validator.Int64{int64validator.Between(0, 900)},
+							Description: "Seconds to wait after the previous tier before trying this one. 0 to 900.",
+							Optional:    true,
+							Computed:    true,
+							Default:     int64default.StaticInt64(0),
+							Validators:  []validator.Int64{int64validator.Between(0, 900)},
 						},
 					},
 				},

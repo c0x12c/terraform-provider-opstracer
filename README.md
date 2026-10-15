@@ -14,7 +14,7 @@ Terraform provider for OpsTracer on-call configuration, built on the
 | `opstracer_member_title` | A custom member title |
 | `data.opstracer_user` | Look up a member's user ID by email |
 
-Examples: [basic](examples/basic/main.tf) (service and policy), [team](examples/team/main.tf)
+Docs: [registry.terraform.io/providers/c0x12c/opstracer](https://registry.terraform.io/providers/c0x12c/opstracer/latest/docs), generated into `docs/` from schema descriptions and `examples/`. Full setup example: [team](examples/team/main.tf)
 (team, rotation, routing and notification settings).
 
 ### Behaviour worth knowing
@@ -78,7 +78,7 @@ provider_installation {
 }
 ```
 
-Then `terraform plan` in `examples/basic` (skip `terraform init` with dev overrides).
+Then `terraform plan` in `examples/team` (skip `terraform init` with dev overrides).
 
 ### Adding a resource
 
@@ -86,6 +86,7 @@ Then `terraform plan` in `examples/basic` (skip `terraform init` with dev overri
 2. Add `internal/provider/<name>_resource.go` with schema, CRUD and import.
 3. Register it in `Resources()` in `provider.go`.
 4. Extend the fake API in `fake_server_test.go` and add a test step.
+5. Add `examples/resources/opstracer_<name>/resource.tf` and `import.sh`, then `go generate ./...` to refresh `docs/`.
 
 ## What the API needs for Terraform
 

@@ -39,10 +39,10 @@ func (d *userDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, r
 	resp.Schema = schema.Schema{
 		Description: "Look up an org member by email, to get the user ID for schedules, teams and escalation policies.",
 		Attributes: map[string]schema.Attribute{
-			"email":        schema.StringAttribute{Required: true},
-			"id":           schema.StringAttribute{Computed: true},
-			"display_name": schema.StringAttribute{Computed: true},
-			"role":         schema.StringAttribute{Computed: true},
+			"email":        schema.StringAttribute{Required: true, Description: "Email of the org member."},
+			"id":           schema.StringAttribute{Computed: true, Description: "User ID."},
+			"display_name": schema.StringAttribute{Computed: true, Description: "Display name."},
+			"role":         schema.StringAttribute{Computed: true, Description: "Org role, e.g. `OWNER`."},
 		},
 	}
 }

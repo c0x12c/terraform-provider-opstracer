@@ -10,6 +10,8 @@ import (
 	"github.com/c0x12c/terraform-provider-opstracer/internal/provider"
 )
 
+//go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@v0.25.0 generate --provider-name opstracer
+
 // Set by goreleaser.
 var version = "dev"
 
