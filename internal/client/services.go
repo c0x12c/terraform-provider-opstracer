@@ -43,3 +43,7 @@ func (c *Client) UpdateService(ctx context.Context, in ServiceInput) (*Service, 
 func (c *Client) DeleteService(ctx context.Context, id string) error {
 	return c.do(ctx, http.MethodPost, "/api/v1/services/delete", nil, idRequest{ID: id}, nil)
 }
+
+func (c *Client) ListServices(ctx context.Context) ([]Service, error) {
+	return listAll[Service](ctx, c, "/api/v1/services/list")
+}

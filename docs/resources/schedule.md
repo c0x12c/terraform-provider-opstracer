@@ -26,6 +26,12 @@ resource "opstracer_schedule" "backend" {
   name      = "Backend on-call"
   time_zone = "Asia/Ho_Chi_Minh"
 
+  # Needs the Slack integration connected.
+  announcement = {
+    slack_channel_id   = "C0123456789"
+    slack_channel_name = "backend-oncall"
+  }
+
   layers = [
     {
       name                  = "Weekly primary"
@@ -56,6 +62,7 @@ resource "opstracer_schedule" "backend" {
 
 ### Optional
 
+- `announcement` (Attributes) Post shift changes to a Slack channel. Needs the Slack integration connected. Unset turns announcements off. (see [below for nested schema](#nestedatt--announcement))
 - `description` (String) Free-text description.
 - `time_zone` (String) IANA time zone, e.g. `Asia/Ho_Chi_Minh`. Defaults to the org time zone.
 
@@ -86,6 +93,19 @@ Required:
 - `days` (Set of Number) ISO weekdays: 1 = Monday ... 7 = Sunday.
 - `duration_seconds` (Number) Length of the window in seconds. 28800 = 8 hours.
 - `start_time_of_day` (Number) Seconds after midnight in the layer time zone. 32400 = 09:00.
+
+
+
+<a id="nestedatt--announcement"></a>
+### Nested Schema for `announcement`
+
+Required:
+
+- `slack_channel_id` (String) Slack channel ID, e.g. `C0123456789`.
+
+Optional:
+
+- `slack_channel_name` (String) Channel name shown in the web app.
 
 ## Import
 

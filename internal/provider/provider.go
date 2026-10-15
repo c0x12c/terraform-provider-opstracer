@@ -82,12 +82,28 @@ func (p *opstracerProvider) Resources(_ context.Context) []func() resource.Resou
 		NewRoutingRulesResource,
 		NewNotificationOrderResource,
 		NewMemberTitleResource,
+		NewPlaybookFlowResource,
+		NewMuteResource,
+		NewSuppressionResource,
+		NewLogAlertMonitorResource,
+		NewLogAlertRuleResource,
+		NewIntegrationResource,
+		NewObservabilityConnectionResource,
+		NewServiceDataSourcesResource,
+		NewOrgInvitationResource,
+		NewOrgMemberResource,
+		NewScheduleOverrideResource,
 	}
 }
 
 func (p *opstracerProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewUserDataSource,
+		NewServiceDataSource,
+		NewEscalationPolicyDataSource,
+		NewTeamDataSource,
+		NewScheduleDataSource,
+		NewOnCallDataSource,
 	}
 }
 

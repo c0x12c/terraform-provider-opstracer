@@ -31,11 +31,17 @@ type scheduleResource struct {
 }
 
 type scheduleModel struct {
-	ID          types.String    `tfsdk:"id"`
-	Name        types.String    `tfsdk:"name"`
-	Description types.String    `tfsdk:"description"`
-	TimeZone    types.String    `tfsdk:"time_zone"`
-	Layers      []scheduleLayer `tfsdk:"layers"`
+	ID           types.String          `tfsdk:"id"`
+	Name         types.String          `tfsdk:"name"`
+	Description  types.String          `tfsdk:"description"`
+	TimeZone     types.String          `tfsdk:"time_zone"`
+	Layers       []scheduleLayer       `tfsdk:"layers"`
+	Announcement *scheduleAnnouncement `tfsdk:"announcement"`
+}
+
+type scheduleAnnouncement struct {
+	SlackChannelID   types.String `tfsdk:"slack_channel_id"`
+	SlackChannelName types.String `tfsdk:"slack_channel_name"`
 }
 
 type scheduleLayer struct {
@@ -83,6 +89,20 @@ func (r *scheduleResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Computed:      true,
 				Description:   "IANA time zone, e.g. `Asia/Ho_Chi_Minh`. Defaults to the org time zone.",
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			},
+			"announcement": schema.SingleNestedAttribute{
+				Optional:    true,
+				Description: "Post shift changes to a Slack channel. Needs the Slack integration connected. Unset turns announcements off.",
+				Attributes: map[string]schema.Attribute{
+					"slack_channel_id": schema.StringAttribute{
+						Required:    true,
+						Description: "Slack channel ID, e.g. `C0123456789`.",
+					},
+					"slack_channel_name": schema.StringAttribute{
+						Optional:    true,
+						Description: "Channel name shown in the web app.",
+					},
+				},
 			},
 			"layers": schema.ListNestedAttribute{
 				Required:    true,
@@ -172,7 +192,16 @@ func (r *scheduleResource) Create(ctx context.Context, req resource.CreateReques
 		resp.Diagnostics.AddError("Error creating schedule", err.Error())
 		return
 	}
-	resp.Diagnostics.Append(resp.State.Set(ctx, scheduleFromAPI(s, plan))...)
+	state := scheduleFromAPI(s, plan)
+	// Save the schedule first so a failed announcement does not orphan it.
+	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
+	if plan.Announcement != nil {
+		if state.Announcement, err = r.setAnnouncement(ctx, s.ID, plan.Announcement); err != nil {
+			resp.Diagnostics.AddError("Error setting schedule announcement", err.Error())
+			return
+		}
+		resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
+	}
 }
 
 func (r *scheduleResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -191,12 +220,20 @@ func (r *scheduleResource) Read(ctx context.Context, req resource.ReadRequest, r
 		resp.Diagnostics.AddError("Error reading schedule", err.Error())
 		return
 	}
-	resp.Diagnostics.Append(resp.State.Set(ctx, scheduleFromAPI(s, state))...)
+	a, err := r.client.GetScheduleAnnouncement(ctx, s.ID)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading schedule announcement", err.Error())
+		return
+	}
+	m := scheduleFromAPI(s, state)
+	m.Announcement = announcementFromAPI(a, state.Announcement)
+	resp.Diagnostics.Append(resp.State.Set(ctx, m)...)
 }
 
 func (r *scheduleResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan scheduleModel
+	var plan, prior scheduleModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &prior)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -206,7 +243,15 @@ func (r *scheduleResource) Update(ctx context.Context, req resource.UpdateReques
 		resp.Diagnostics.AddError("Error updating schedule", err.Error())
 		return
 	}
-	resp.Diagnostics.Append(resp.State.Set(ctx, scheduleFromAPI(s, plan))...)
+	state := scheduleFromAPI(s, plan)
+	state.Announcement = prior.Announcement
+	if !sameAnnouncement(plan.Announcement, prior.Announcement) {
+		if state.Announcement, err = r.setAnnouncement(ctx, s.ID, plan.Announcement); err != nil {
+			resp.Diagnostics.AddError("Error updating schedule announcement", err.Error())
+			state.Announcement = prior.Announcement
+		}
+	}
+	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
 func (r *scheduleResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -224,6 +269,41 @@ func (r *scheduleResource) Delete(ctx context.Context, req resource.DeleteReques
 
 func (r *scheduleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+func (r *scheduleResource) setAnnouncement(ctx context.Context, scheduleID string, a *scheduleAnnouncement) (*scheduleAnnouncement, error) {
+	in := client.ScheduleAnnouncement{ScheduleID: scheduleID}
+	if a != nil {
+		in.SlackChannelID = a.SlackChannelID.ValueStringPointer()
+		in.SlackChannelName = a.SlackChannelName.ValueStringPointer()
+	}
+	out, err := r.client.UpdateScheduleAnnouncement(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return announcementFromAPI(out, a), nil
+}
+
+// announcementFromAPI returns nil when no channel is set; prior fills in a channel name the server does not echo.
+func announcementFromAPI(a *client.ScheduleAnnouncement, prior *scheduleAnnouncement) *scheduleAnnouncement {
+	if a.SlackChannelID == nil || *a.SlackChannelID == "" {
+		return nil
+	}
+	m := &scheduleAnnouncement{
+		SlackChannelID:   types.StringPointerValue(a.SlackChannelID),
+		SlackChannelName: types.StringPointerValue(a.SlackChannelName),
+	}
+	if a.SlackChannelName == nil && prior != nil && prior.SlackChannelID.Equal(m.SlackChannelID) {
+		m.SlackChannelName = prior.SlackChannelName
+	}
+	return m
+}
+
+func sameAnnouncement(a, b *scheduleAnnouncement) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return a.SlackChannelID.Equal(b.SlackChannelID) && a.SlackChannelName.Equal(b.SlackChannelName)
 }
 
 func scheduleInput(m scheduleModel) client.ScheduleInput {
