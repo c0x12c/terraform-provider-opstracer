@@ -1,0 +1,38 @@
+name: test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.11.4
+          # The test harness needs the real binary, not the wrapper script.
+          terraform_wrapper: false
+      - run: go vet ./...
+      - run: TF_ACC_TERRAFORM_PATH=$(which terraform) go test ./...
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      # gitleaks-action needs a paid license for org repos; the CLI does not.
+      - run: go install github.com/zricethezav/gitleaks/v8@v8.21.2
+      - run: gitleaks git . --redact -v
