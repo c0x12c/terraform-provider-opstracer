@@ -12,7 +12,19 @@ Terraform provider for OpsTracer on-call configuration, built on the
 | `opstracer_routing_rules` | All alert routing rules of the org, in order (one per org) |
 | `opstracer_notification_order` | Org-wide channel order for paging (one per org) |
 | `opstracer_member_title` | A custom member title |
+| `opstracer_schedule_override` | Someone covers a schedule for a time window |
+| `opstracer_integration` | An alert source (Datadog, Grafana, generic webhook, ...) for a service |
+| `opstracer_observability_connection` | A connection to an observability tool used for investigations |
+| `opstracer_service_data_sources` | Which observability connections a service uses |
+| `opstracer_mute` | Silence a whole service or integration for a time window |
+| `opstracer_suppression` | Silence only matching alerts of a service for a time window |
+| `opstracer_log_alert_monitor` / `opstracer_log_alert_rule` | Log-based alert monitors and their rules |
+| `opstracer_org_invitation` | Invite someone to the org |
+| `opstracer_org_member` | Role and title of an existing member (never removes the member) |
+| `opstracer_playbook_flow` | An investigation playbook flow |
 | `data.opstracer_user` | Look up a member's user ID by email |
+| `data.opstracer_service`, `_escalation_policy`, `_team`, `_schedule` | Look up an existing object by name |
+| `data.opstracer_oncall` | Who is on call for a schedule, now or at a given time |
 
 Docs: [registry.terraform.io/providers/c0x12c/opstracer](https://registry.terraform.io/providers/c0x12c/opstracer/latest/docs), generated into `docs/` from schema descriptions and `examples/`. Full setup example: [team](examples/team/main.tf)
 (team, rotation, routing and notification settings).
