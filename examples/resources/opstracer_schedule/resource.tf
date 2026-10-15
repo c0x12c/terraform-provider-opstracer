@@ -11,6 +11,12 @@ resource "opstracer_schedule" "backend" {
   name      = "Backend on-call"
   time_zone = "Asia/Ho_Chi_Minh"
 
+  # Needs the Slack integration connected.
+  announcement = {
+    slack_channel_id   = "C0123456789"
+    slack_channel_name = "backend-oncall"
+  }
+
   layers = [
     {
       name                  = "Weekly primary"

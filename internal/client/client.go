@@ -116,3 +116,9 @@ func retryable(status int) bool {
 type idRequest struct {
 	ID string `json:"id"`
 }
+
+// IsGone reports a 404 or 410, which some endpoints use for objects that no longer exist.
+func IsGone(err error) bool {
+	var apiErr *APIError
+	return errors.As(err, &apiErr) && (apiErr.StatusCode == http.StatusNotFound || apiErr.StatusCode == http.StatusGone)
+}

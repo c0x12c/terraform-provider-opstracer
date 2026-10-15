@@ -5,6 +5,7 @@ data "opstracer_user" "lead" {
 resource "opstracer_escalation_policy" "backend" {
   name        = "Backend"
   description = "Page the backend on-call, then the lead"
+  is_default  = true
 
   levels = [
     {

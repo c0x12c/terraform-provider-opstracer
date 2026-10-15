@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -22,6 +23,7 @@ var (
 	_ resource.Resource                = &escalationPolicyResource{}
 	_ resource.ResourceWithConfigure   = &escalationPolicyResource{}
 	_ resource.ResourceWithImportState = &escalationPolicyResource{}
+	_ resource.ResourceWithModifyPlan  = &escalationPolicyResource{}
 )
 
 type escalationPolicyResource struct {
@@ -132,13 +134,32 @@ func (r *escalationPolicyResource) Schema(_ context.Context, _ resource.SchemaRe
 				PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			"is_default": schema.BoolAttribute{
-				Description:   "Whether this is the org default policy.",
+				Description: "Whether this is the org default policy, used when no routing rule matches. The org always has " +
+					"exactly one default, so `true` takes it over from the current default. `false` is accepted only while " +
+					"another policy is the default: to move the default, set `true` on the new policy and leave this unset here.",
+				Optional:      true,
 				Computed:      true,
 				PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 		},
 	}
 }
+
+// ModifyPlan rejects is_default = false on the current default at plan time, before anything is changed.
+func (r *escalationPolicyResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() {
+		return
+	}
+	var planned, current types.Bool
+	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, path.Root("is_default"), &planned)...)
+	resp.Diagnostics.Append(req.State.GetAttribute(ctx, path.Root("is_default"), &current)...)
+	if planned.Equal(types.BoolValue(false)) && current.ValueBool() {
+		resp.Diagnostics.AddAttributeError(path.Root("is_default"), "Cannot unset the default escalation policy", errUnsetDefault)
+	}
+}
+
+const errUnsetDefault = "This policy is the org default, and the org always has exactly one. Set is_default = true " +
+	"on another policy instead, and leave is_default unset on this one."
 
 func (r *escalationPolicyResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData != nil {
@@ -156,6 +177,11 @@ func (r *escalationPolicyResource) Create(ctx context.Context, req resource.Crea
 	p, err := r.client.CreateEscalationPolicy(ctx, escalationPolicyInput(plan))
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating escalation policy", err.Error())
+		return
+	}
+	resp.Diagnostics.Append(resp.State.Set(ctx, escalationPolicyFromAPI(p))...)
+	if p, err = r.applyDefault(ctx, p, plan.IsDefault); err != nil {
+		resp.Diagnostics.AddError("Error setting default escalation policy", err.Error())
 		return
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, escalationPolicyFromAPI(p))...)
@@ -193,6 +219,11 @@ func (r *escalationPolicyResource) Update(ctx context.Context, req resource.Upda
 		return
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, escalationPolicyFromAPI(p))...)
+	if p, err = r.applyDefault(ctx, p, plan.IsDefault); err != nil {
+		resp.Diagnostics.AddError("Error setting default escalation policy", err.Error())
+		return
+	}
+	resp.Diagnostics.Append(resp.State.Set(ctx, escalationPolicyFromAPI(p))...)
 }
 
 func (r *escalationPolicyResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -210,6 +241,19 @@ func (r *escalationPolicyResource) Delete(ctx context.Context, req resource.Dele
 
 func (r *escalationPolicyResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+// applyDefault makes p the default when asked. There is no "unset" call: the default only moves when
+// another policy takes it, so false on the current default is an error rather than a silent no-op.
+func (r *escalationPolicyResource) applyDefault(ctx context.Context, p *client.EscalationPolicy, want types.Bool) (*client.EscalationPolicy, error) {
+	switch {
+	case want.IsUnknown() || want.IsNull() || want.ValueBool() == p.IsDefault:
+		return p, nil
+	case want.ValueBool():
+		return r.client.SetDefaultEscalationPolicy(ctx, p.ID)
+	default:
+		return p, errors.New(errUnsetDefault)
+	}
 }
 
 func escalationPolicyInput(m escalationPolicyModel) client.EscalationPolicyInput {
