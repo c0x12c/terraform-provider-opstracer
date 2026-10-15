@@ -20,6 +20,7 @@ data "opstracer_user" "lead" {
 resource "opstracer_escalation_policy" "backend" {
   name        = "Backend"
   description = "Page the backend on-call, then the lead"
+  is_default  = true
 
   levels = [
     {
@@ -45,13 +46,13 @@ resource "opstracer_escalation_policy" "backend" {
 
 - `ack_timeout_seconds` (Number) Seconds an acknowledgement lasts before the alert re-pages. Server default when unset.
 - `description` (String) Free-text description.
+- `is_default` (Boolean) Whether this is the org default policy, used when no routing rule matches. The org always has exactly one default, so `true` takes it over from the current default. `false` is accepted only while another policy is the default: to move the default, set `true` on the new policy and leave this unset here.
 - `repage_after_ack` (Boolean) Whether to page again once the acknowledgement times out. Server default when unset.
 - `repeat_count` (Number) Times to repeat the whole policy when nobody acknowledges. Server default when unset.
 
 ### Read-Only
 
 - `id` (String) Escalation policy ID.
-- `is_default` (Boolean) Whether this is the org default policy.
 
 <a id="nestedatt--levels"></a>
 ### Nested Schema for `levels`

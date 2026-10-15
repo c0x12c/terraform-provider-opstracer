@@ -66,3 +66,9 @@ func (c *Client) GetDefaultEscalationPolicy(ctx context.Context) (*EscalationPol
 	var out EscalationPolicy
 	return &out, c.do(ctx, http.MethodGet, "/api/v1/escalation-policies/default", nil, nil, &out)
 }
+
+// SetDefaultEscalationPolicy makes id the org default; the previous default is unset by the server.
+func (c *Client) SetDefaultEscalationPolicy(ctx context.Context, id string) (*EscalationPolicy, error) {
+	var out EscalationPolicy
+	return &out, c.do(ctx, http.MethodPost, "/api/v1/escalation-policies/set-default", nil, idRequest{ID: id}, &out)
+}

@@ -90,6 +90,9 @@ func (p *opstracerProvider) Resources(_ context.Context) []func() resource.Resou
 		NewIntegrationResource,
 		NewObservabilityConnectionResource,
 		NewServiceDataSourcesResource,
+		NewOrgInvitationResource,
+		NewOrgMemberResource,
+		NewScheduleOverrideResource,
 	}
 }
 

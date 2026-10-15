@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"net/http"
+	"net/url"
 )
 
 type NotificationOrder struct {
@@ -58,12 +59,30 @@ func (c *Client) DeleteMemberTitle(ctx context.Context, id string) error {
 }
 
 type Member struct {
-	UserID      string  `json:"user_id"`
-	Email       string  `json:"email"`
-	DisplayName *string `json:"display_name"`
-	Role        string  `json:"role"`
+	UserID      string       `json:"user_id"`
+	Email       string       `json:"email"`
+	DisplayName *string      `json:"display_name"`
+	Role        string       `json:"role"`
+	Title       *MemberTitle `json:"title"`
 }
 
 func (c *Client) ListMembers(ctx context.Context) ([]Member, error) {
 	return listAll[Member](ctx, c, "/api/v1/org/members/list")
+}
+
+func (c *Client) UpdateMemberRole(ctx context.Context, userID, role string) (*Member, error) {
+	var out Member
+	in := struct {
+		Role string `json:"role"`
+	}{role}
+	return &out, c.do(ctx, http.MethodPost, "/api/v1/org/members/update-role", url.Values{"user_id": {userID}}, in, &out)
+}
+
+// AssignMemberTitle assigns a title; a nil titleID clears it.
+func (c *Client) AssignMemberTitle(ctx context.Context, userID string, titleID *string) (*Member, error) {
+	var out Member
+	in := struct {
+		TitleID *string `json:"title_id"`
+	}{titleID}
+	return &out, c.do(ctx, http.MethodPost, "/api/v1/org/members/update-title", url.Values{"user_id": {userID}}, in, &out)
 }

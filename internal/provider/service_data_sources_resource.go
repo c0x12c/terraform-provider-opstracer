@@ -30,12 +30,12 @@ type serviceDataSourcesResource struct {
 }
 
 type serviceDataSourcesModel struct {
-	ID        types.String                 `tfsdk:"id"`
-	ServiceID types.String                 `tfsdk:"service_id"`
-	Sources   map[string]serviceDataSource `tfsdk:"sources"`
+	ID        types.String                       `tfsdk:"id"`
+	ServiceID types.String                       `tfsdk:"service_id"`
+	Sources   map[string]serviceDataSourceChoice `tfsdk:"sources"`
 }
 
-type serviceDataSource struct {
+type serviceDataSourceChoice struct {
 	Choice       types.String `tfsdk:"choice"`
 	ConnectionID types.String `tfsdk:"connection_id"`
 }
@@ -100,7 +100,7 @@ func (r *serviceDataSourcesResource) ValidateConfig(ctx context.Context, req res
 	var sources map[string]types.Object
 	resp.Diagnostics.Append(raw.ElementsAs(ctx, &sources, false)...)
 	for typ, obj := range sources {
-		var s serviceDataSource
+		var s serviceDataSourceChoice
 		if obj.IsUnknown() || obj.As(ctx, &s, basetypes.ObjectAsOptions{}).HasError() || s.Choice.IsUnknown() || s.ConnectionID.IsUnknown() {
 			continue
 		}
@@ -174,8 +174,7 @@ func (r *serviceDataSourcesResource) ImportState(ctx context.Context, req resour
 }
 
 // apply sets every planned choice and resets providers dropped from the config to the default.
-func (r *serviceDataSourcesResource) apply(ctx context.Context, plan serviceDataSourcesModel, prior map[string]serviceDataSource,
-	addError func(string, string), setState func(serviceDataSourcesModel)) {
+func (r *serviceDataSourcesResource) apply(ctx context.Context, plan serviceDataSourcesModel, prior map[string]serviceDataSourceChoice, addError func(string, string), setState func(serviceDataSourcesModel)) {
 	serviceID := plan.ServiceID.ValueString()
 	for typ := range prior {
 		if _, ok := plan.Sources[typ]; ok {
@@ -218,14 +217,14 @@ func (r *serviceDataSourcesResource) read(ctx context.Context, prior serviceData
 	m := serviceDataSourcesModel{
 		ID:        types.StringValue(serviceID),
 		ServiceID: types.StringValue(serviceID),
-		Sources:   map[string]serviceDataSource{},
+		Sources:   map[string]serviceDataSourceChoice{},
 	}
 	for typ := range prior.Sources {
-		m.Sources[typ] = serviceDataSource{Choice: types.StringValue(choiceDefault), ConnectionID: types.StringNull()}
+		m.Sources[typ] = serviceDataSourceChoice{Choice: types.StringValue(choiceDefault), ConnectionID: types.StringNull()}
 	}
 	for _, s := range sources {
 		if _, tracked := prior.Sources[s.Type]; tracked || s.Choice != choiceDefault {
-			m.Sources[s.Type] = serviceDataSource{Choice: types.StringValue(s.Choice), ConnectionID: types.StringPointerValue(s.ConnectionID)}
+			m.Sources[s.Type] = serviceDataSourceChoice{Choice: types.StringValue(s.Choice), ConnectionID: types.StringPointerValue(s.ConnectionID)}
 		}
 	}
 	return m, nil

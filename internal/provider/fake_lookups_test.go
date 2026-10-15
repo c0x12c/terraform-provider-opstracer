@@ -220,9 +220,3 @@ func copyWithout(m map[string]any, drop ...string) map[string]any {
 	}
 	return out
 }
-
-func writeError(w http.ResponseWriter, status int, code string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(map[string]any{"error": map[string]any{"code": code, "message": code}})
-}
