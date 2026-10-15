@@ -32,10 +32,26 @@ type fakeAPI struct {
 	titles            map[string]map[string]any
 	rules             []map[string]any
 	notificationOrder map[string]any
+	stores            map[string]map[string]map[string]any
+}
+
+// fakeRoute serves one "METHOD /path" of the fake API. Each API area registers its routes from its
+// own fake_<area>_test.go init(), so areas can be added without touching this file.
+type fakeRoute func(f *fakeAPI, w http.ResponseWriter, r *http.Request, body map[string]any)
+
+var fakeRoutes = map[string]fakeRoute{}
+
+// store returns the named object store, creating it on first use.
+func (f *fakeAPI) store(name string) map[string]map[string]any {
+	if f.stores[name] == nil {
+		f.stores[name] = map[string]map[string]any{}
+	}
+	return f.stores[name]
 }
 
 func newFakeAPI(t *testing.T) *httptest.Server {
 	f := &fakeAPI{
+		stores:    map[string]map[string]map[string]any{},
 		services:  map[string]map[string]any{},
 		policies:  map[string]map[string]any{},
 		schedules: map[string]map[string]any{},
@@ -65,7 +81,12 @@ func (f *fakeAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	id := r.URL.Query().Get("id")
 
-	switch r.Method + " " + r.URL.Path {
+	key := r.Method + " " + r.URL.Path
+	if h, ok := fakeRoutes[key]; ok {
+		h(f, w, r, body)
+		return
+	}
+	switch key {
 	case "POST /api/v1/escalation-policies":
 		f.create(w, f.policies, body, policyView)
 	case "GET /api/v1/escalation-policy":
