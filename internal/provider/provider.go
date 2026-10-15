@@ -87,6 +87,9 @@ func (p *opstracerProvider) Resources(_ context.Context) []func() resource.Resou
 		NewSuppressionResource,
 		NewLogAlertMonitorResource,
 		NewLogAlertRuleResource,
+		NewIntegrationResource,
+		NewObservabilityConnectionResource,
+		NewServiceDataSourcesResource,
 	}
 }
 
