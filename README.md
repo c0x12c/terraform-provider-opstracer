@@ -45,7 +45,7 @@ terraform {
   required_providers {
     opstracer = {
       source  = "c0x12c/opstracer"
-      version = "~> 0.2.0"
+      version = "~> 0.2.1"
     }
   }
 }
@@ -79,11 +79,10 @@ go generate ./...      # regenerates docs/ from schema descriptions and examples
 
 ### Releasing
 
-```bash
-make version VERSION=0.2.1   # updates the version shown in examples, README and docs/
-```
-
-Merge that, then tag `v0.2.1` on main. The release workflow fails if docs/ still names another version.
+Run the **Release** workflow in GitHub Actions with the version (e.g. `0.2.2`), or
+`gh workflow run release.yml -f version=0.2.2`. It writes the version into the examples and docs/,
+commits that to main, tags `v0.2.2` and publishes. Don't push tags by hand: the release fails if
+docs/ names another version.
 
 ### Adding a resource
 
