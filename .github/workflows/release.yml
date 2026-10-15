@@ -1,7 +1,13 @@
-# Push a vX.Y.Z tag; goreleaser builds, signs and attaches the registry files.
+# Run this workflow with a version: it writes that version into the examples and docs, commits it to
+# main, tags vX.Y.Z and publishes. Pushing a tag by hand also publishes, but only if the docs match.
 name: Release
 
 on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release, e.g. 0.2.2
+        required: true
   push:
     tags:
       - 'v*'
@@ -19,25 +25,49 @@ jobs:
     if: github.repository_owner == 'c0x12c'
     env:
       HAS_GPG_KEY: ${{ secrets.GPG_PRIVATE_KEY != '' }}
+      VERSION: ${{ inputs.version || github.ref_name }}
     steps:
-      - name: Checkout tag
+      - name: Checkout
         uses: actions/checkout@v7
         with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && 'main' || github.ref }}
           fetch-depth: 0
-
-      # The registry shows docs/ from the tag, so its example must name this release line.
-      - name: Check docs name this version
-        shell: bash
-        run: |
-          v="${GITHUB_REF_NAME#v}"; want="~> $(echo "$v" | cut -d. -f1,2).0"
-          for f in examples/provider/provider.tf docs/index.md README.md; do
-            grep -q "version = \"$want\"" "$f" || { echo "::error file=$f::expected version = \"$want\"; run make version VERSION=$v before tagging"; exit 1; }
-          done
 
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
+
+      - name: Set up Terraform
+        if: github.event_name == 'workflow_dispatch'
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_wrapper: false
+
+      - name: Write version into docs, commit and tag
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          v="${VERSION#v}"
+          [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::version must look like 0.2.2"; exit 1; }
+          git rev-parse -q --verify "refs/tags/v$v" >/dev/null && { echo "::error::v$v already exists"; exit 1; }
+          make version VERSION="$v"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain)" ]; then
+            git commit -qam "chore(release): v$v"
+            git push origin HEAD:main
+          fi
+          git tag "v$v" && git push origin "v$v"
+
+      # The registry shows docs/ from the tag, so its example must name this exact version.
+      - name: Check docs name this version
+        shell: bash
+        run: |
+          v="${VERSION#v}"; want="~> $v"
+          for f in examples/provider/provider.tf docs/index.md README.md; do
+            grep -q "version = \"$want\"" "$f" || { echo "::error file=$f::expected version = \"$want\"; use the Release workflow instead of pushing the tag by hand"; exit 1; }
+          done
 
       # Signing is only required by the public Terraform Registry; without a key the release is unsigned.
       - name: Import GPG key

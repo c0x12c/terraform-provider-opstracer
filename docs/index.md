@@ -16,7 +16,7 @@ terraform {
   required_providers {
     opstracer = {
       source  = "c0x12c/opstracer"
-      version = "~> 0.2.0"
+      version = "~> 0.2.1"
     }
   }
 }
