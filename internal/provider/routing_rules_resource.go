@@ -67,24 +67,29 @@ func (r *routingRulesResource) Schema(_ context.Context, _ resource.SchemaReques
 			"Use one instance per org.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
+				Description:   "Always `routing_rules`.",
 				Computed:      true,
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"rules": schema.ListNestedAttribute{
-				Required: true,
+				Description: "Rules in evaluation order.",
+				Required:    true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"id": schema.StringAttribute{
+							Description:   "Rule ID.",
 							Computed:      true,
 							PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 						},
 						"escalation_policy_id": schema.StringAttribute{
-							Required: true,
+							Description: "Escalation policy to page when the rule matches.",
+							Required:    true,
 						},
 						"enabled": schema.BoolAttribute{
-							Optional: true,
-							Computed: true,
-							Default:  booldefault.StaticBool(true),
+							Description: "Set to false to keep the rule without evaluating it.",
+							Optional:    true,
+							Computed:    true,
+							Default:     booldefault.StaticBool(true),
 						},
 						"severities": schema.SetAttribute{
 							Optional:    true,
@@ -96,11 +101,13 @@ func (r *routingRulesResource) Schema(_ context.Context, _ resource.SchemaReques
 							},
 						},
 						"source_type": schema.StringAttribute{
-							Optional:   true,
-							Validators: []validator.String{stringvalidator.OneOf(sourceTypes...)},
+							Description: "Match alerts from this integration type: `alertmanager`, `datadog`, `generic`, `grafana`, `newrelic`, `pagerduty`, `railway`, `sentry`, `supabase`, `vercel`.",
+							Optional:    true,
+							Validators:  []validator.String{stringvalidator.OneOf(sourceTypes...)},
 						},
 						"integration_id": schema.StringAttribute{
-							Optional: true,
+							Description: "Match alerts from this integration only.",
+							Optional:    true,
 						},
 						"tags": schema.MapAttribute{
 							Optional:    true,
@@ -109,6 +116,7 @@ func (r *routingRulesResource) Schema(_ context.Context, _ resource.SchemaReques
 							Validators:  []validator.Map{mapvalidator.SizeAtLeast(1)},
 						},
 						"routing_hints": schema.MapAttribute{
+							Description: "Routing hints on the alert that must all match.",
 							Optional:    true,
 							ElementType: types.StringType,
 							Validators:  []validator.Map{mapvalidator.SizeAtLeast(1)},

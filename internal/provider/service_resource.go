@@ -43,17 +43,21 @@ func (r *serviceResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 		Description: "An OpsTracer service. Alerts for a service are paged through its escalation policy.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
+				Description:   "Service ID.",
 				Computed:      true,
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"name": schema.StringAttribute{
-				Required: true,
+				Description: "Service name, unique in the org.",
+				Required:    true,
 			},
 			"description": schema.StringAttribute{
-				Optional: true,
+				Description: "Free-text description.",
+				Optional:    true,
 			},
 			"escalation_policy_id": schema.StringAttribute{
-				Required: true,
+				Description: "ID of the escalation policy that pages for this service.",
+				Required:    true,
 			},
 		},
 	}

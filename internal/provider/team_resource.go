@@ -45,11 +45,13 @@ func (r *teamResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 		Description: "An OpsTracer team.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
+				Description:   "Team ID.",
 				Computed:      true,
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"name": schema.StringAttribute{
-				Required: true,
+				Description: "Team name.",
+				Required:    true,
 			},
 			"member_user_ids": schema.SetAttribute{
 				Optional:    true,

@@ -1,0 +1,1 @@
+terraform import opstracer_routing_rules.org routing_rules

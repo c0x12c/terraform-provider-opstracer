@@ -63,14 +63,17 @@ func (r *escalationPolicyResource) Schema(_ context.Context, _ resource.SchemaRe
 		Description: "An OpsTracer escalation policy: ordered levels of responders paged until someone acknowledges.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
+				Description:   "Escalation policy ID.",
 				Computed:      true,
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"name": schema.StringAttribute{
-				Required: true,
+				Description: "Policy name.",
+				Required:    true,
 			},
 			"description": schema.StringAttribute{
-				Optional: true,
+				Description: "Free-text description.",
+				Optional:    true,
 			},
 			"levels": schema.ListNestedAttribute{
 				Required:    true,
@@ -85,8 +88,9 @@ func (r *escalationPolicyResource) Schema(_ context.Context, _ resource.SchemaRe
 							PlanModifiers: []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 						},
 						"targets": schema.ListNestedAttribute{
-							Required:   true,
-							Validators: []validator.List{listvalidator.SizeAtLeast(1)},
+							Description: "Who to page at this level. All targets are paged together.",
+							Required:    true,
+							Validators:  []validator.List{listvalidator.SizeAtLeast(1)},
 							NestedObject: schema.NestedAttributeObject{
 								Attributes: map[string]schema.Attribute{
 									"type": schema.StringAttribute{
@@ -95,10 +99,12 @@ func (r *escalationPolicyResource) Schema(_ context.Context, _ resource.SchemaRe
 										Validators:  []validator.String{stringvalidator.OneOf("user", "schedule")},
 									},
 									"user_id": schema.StringAttribute{
-										Optional: true,
+										Description: "User to page. Required when `type` is `user`.",
+										Optional:    true,
 									},
 									"schedule_id": schema.StringAttribute{
-										Optional: true,
+										Description: "Schedule whose on-call user is paged. Required when `type` is `schedule`.",
+										Optional:    true,
 									},
 								},
 							},
@@ -108,21 +114,25 @@ func (r *escalationPolicyResource) Schema(_ context.Context, _ resource.SchemaRe
 			},
 			// Server fills defaults when these are omitted.
 			"repeat_count": schema.Int64Attribute{
+				Description:   "Times to repeat the whole policy when nobody acknowledges. Server default when unset.",
 				Optional:      true,
 				Computed:      true,
 				PlanModifiers: []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 			},
 			"ack_timeout_seconds": schema.Int64Attribute{
+				Description:   "Seconds an acknowledgement lasts before the alert re-pages. Server default when unset.",
 				Optional:      true,
 				Computed:      true,
 				PlanModifiers: []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 			},
 			"repage_after_ack": schema.BoolAttribute{
+				Description:   "Whether to page again once the acknowledgement times out. Server default when unset.",
 				Optional:      true,
 				Computed:      true,
 				PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
 			"is_default": schema.BoolAttribute{
+				Description:   "Whether this is the org default policy.",
 				Computed:      true,
 				PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},

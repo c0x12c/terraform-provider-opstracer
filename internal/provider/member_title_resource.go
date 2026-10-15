@@ -41,11 +41,13 @@ func (r *memberTitleResource) Schema(_ context.Context, _ resource.SchemaRequest
 		Description: "A custom member title for the org, alongside the built-in ones (Engineer, Manager, ...).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
+				Description:   "Title ID.",
 				Computed:      true,
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"name": schema.StringAttribute{
-				Required: true,
+				Description: "Title shown on members.",
+				Required:    true,
 			},
 		},
 	}

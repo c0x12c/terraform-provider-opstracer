@@ -66,14 +66,17 @@ func (r *scheduleResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 		Description: "An on-call schedule. Each layer is a rotation; when layers overlap, the later layer wins.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
+				Description:   "Schedule ID.",
 				Computed:      true,
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"name": schema.StringAttribute{
-				Required: true,
+				Description: "Schedule name.",
+				Required:    true,
 			},
 			"description": schema.StringAttribute{
-				Optional: true,
+				Description: "Free-text description.",
+				Optional:    true,
 			},
 			"time_zone": schema.StringAttribute{
 				Optional:      true,
@@ -88,7 +91,8 @@ func (r *scheduleResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"name": schema.StringAttribute{
-							Optional: true,
+							Description: "Layer name.",
+							Optional:    true,
 						},
 						"time_zone": schema.StringAttribute{
 							Optional:      true,
@@ -136,8 +140,9 @@ func (r *scheduleResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 										Validators:  []validator.Int64{int64validator.Between(0, 86399)},
 									},
 									"duration_seconds": schema.Int64Attribute{
-										Required:   true,
-										Validators: []validator.Int64{int64validator.Between(1, 86400)},
+										Description: "Length of the window in seconds. 28800 = 8 hours.",
+										Required:    true,
+										Validators:  []validator.Int64{int64validator.Between(1, 86400)},
 									},
 								},
 							},
