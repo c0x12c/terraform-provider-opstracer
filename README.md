@@ -27,6 +27,19 @@ Docs: [registry.terraform.io/providers/c0x12c/opstracer](https://registry.terraf
   (for example `+07:00`) as long as it is the same instant. Right after `terraform import` the first
   plan shows a cosmetic change from the UTC form; applying it is a no-op.
 
+## Usage
+
+```hcl
+terraform {
+  required_providers {
+    opstracer = {
+      source  = "c0x12c/opstracer"
+      version = "~> 0.1"
+    }
+  }
+}
+```
+
 ## Authentication
 
 The provider sends `Authorization: Bearer <token>` on every request. Configure it with:
@@ -50,35 +63,8 @@ value of `OPSTRACER_TOKEN` and nothing in the provider changes (see below).
 
 ```bash
 go test ./...          # runs the full create/update/import/destroy cycle against an in-memory fake API
-go install .           # installs the binary into $(go env GOPATH)/bin
+go generate ./...      # regenerates docs/ from schema descriptions and examples/
 ```
-
-To try the provider in another Terraform project before it is published, install it into Terraform's
-local mirror and pin the version:
-
-```bash
-make install-local   # ~/.terraform.d/plugins/registry.terraform.io/c0x12c/opstracer/0.1.0/<os>_<arch>/
-```
-
-```hcl
-opstracer = { source = "c0x12c/opstracer", version = "0.1.0" }
-```
-
-`terraform init` then installs it like a registry provider (reported as "unauthenticated" because the
-local build is unsigned).
-
-While developing the provider itself, skip `init` entirely with a dev override in `~/.terraformrc`:
-
-```hcl
-provider_installation {
-  dev_overrides {
-    "c0x12c/opstracer" = "/Users/<you>/go/bin"
-  }
-  direct {}
-}
-```
-
-Then `terraform plan` in `examples/team` (skip `terraform init` with dev overrides).
 
 ### Adding a resource
 
