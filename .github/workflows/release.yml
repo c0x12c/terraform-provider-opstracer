@@ -1,46 +1,26 @@
-# release-please opens a release PR from conventional commits; merging it tags
-# vX.Y.Z and goreleaser attaches the signed registry files to that release.
+# Push a vX.Y.Z tag; goreleaser builds, signs and attaches the registry files.
 name: Release
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
-  pull-requests: write
 
 concurrency:
   group: release
   cancel-in-progress: false
 
 jobs:
-  release:
+  goreleaser:
     runs-on: ubuntu-latest
     if: github.repository_owner == 'c0x12c'
-    outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
-    steps:
-      - name: Run release automation
-        id: release
-        uses: googleapis/release-please-action@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          config-file: release-please-config.json
-          manifest-file: .release-please-manifest.json
-
-  goreleaser:
-    needs: release
-    if: needs.release.outputs.release_created == 'true'
-    runs-on: ubuntu-latest
     steps:
       - name: Checkout tag
         uses: actions/checkout@v7
         with:
-          ref: ${{ needs.release.outputs.tag_name }}
           fetch-depth: 0
 
       - name: Set up Go
@@ -55,7 +35,7 @@ jobs:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
-      - name: Build, sign and upload
+      - name: Build, sign and release
         uses: goreleaser/goreleaser-action@v7
         with:
           version: '~> v2'
