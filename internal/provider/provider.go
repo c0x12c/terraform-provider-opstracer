@@ -83,6 +83,10 @@ func (p *opstracerProvider) Resources(_ context.Context) []func() resource.Resou
 		NewNotificationOrderResource,
 		NewMemberTitleResource,
 		NewPlaybookFlowResource,
+		NewMuteResource,
+		NewSuppressionResource,
+		NewLogAlertMonitorResource,
+		NewLogAlertRuleResource,
 	}
 }
 

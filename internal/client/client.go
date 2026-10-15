@@ -45,6 +45,21 @@ func IsNotFound(err error) bool {
 	return errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusNotFound
 }
 
+// ErrorCode returns the API error code, e.g. "mute_already_ended", or "" if there is none.
+func ErrorCode(err error) string {
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		return ""
+	}
+	var body struct {
+		Error struct {
+			Code string `json:"code"`
+		} `json:"error"`
+	}
+	_ = json.Unmarshal([]byte(apiErr.Body), &body)
+	return body.Error.Code
+}
+
 const maxAttempts = 3
 
 func (c *Client) do(ctx context.Context, method, path string, query url.Values, in, out any) error {
