@@ -18,7 +18,6 @@ Terraform provider for OpsTracer on-call configuration, built on the
 | `opstracer_service_data_sources` | Which observability connections a service uses |
 | `opstracer_mute` | Silence a whole service or integration for a time window |
 | `opstracer_suppression` | Silence only matching alerts of a service for a time window |
-| `opstracer_log_alert_monitor` / `opstracer_log_alert_rule` | Log-based alert monitors and their rules |
 | `opstracer_org_invitation` | Invite someone to the org |
 | `opstracer_org_member` | Role and title of an existing member (never removes the member) |
 | `opstracer_playbook_flow` | An investigation playbook flow |
@@ -115,8 +114,8 @@ shows a diff on every plan. Defaults the server fills (`timeout_s` = 300, `repea
 fields as computed.
 
 **5. Every resource needs create, get-by-id, update and delete.** Gaps seen in the current spec:
-`log-alerts/rules` and `org/titles` have no get-by-id (the provider scans the list), and
-`log-alerts/monitors` has no update. The notification order has no delete or reset.
+`org/titles`, mutes, suppressions, schedule overrides and observability connections have no
+get-by-id (the provider scans the list). The notification order has no delete or reset.
 
 **6. Return field-level errors for every bad request.** Most validation errors are good
 (`target_user_required`, `severity_invalid`). But a body that fails to deserialize returns a bare
