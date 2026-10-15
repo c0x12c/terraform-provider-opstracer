@@ -85,8 +85,6 @@ func (p *opstracerProvider) Resources(_ context.Context) []func() resource.Resou
 		NewPlaybookFlowResource,
 		NewMuteResource,
 		NewSuppressionResource,
-		NewLogAlertMonitorResource,
-		NewLogAlertRuleResource,
 		NewIntegrationResource,
 		NewObservabilityConnectionResource,
 		NewServiceDataSourcesResource,
