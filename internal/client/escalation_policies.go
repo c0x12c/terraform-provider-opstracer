@@ -56,3 +56,13 @@ func (c *Client) UpdateEscalationPolicy(ctx context.Context, in EscalationPolicy
 func (c *Client) DeleteEscalationPolicy(ctx context.Context, id string) error {
 	return c.do(ctx, http.MethodPost, "/api/v1/escalation-policies/delete", nil, idRequest{ID: id}, nil)
 }
+
+// ListEscalationPolicies returns summaries; levels are not included.
+func (c *Client) ListEscalationPolicies(ctx context.Context) ([]EscalationPolicy, error) {
+	return listAll[EscalationPolicy](ctx, c, "/api/v1/escalation-policies/list")
+}
+
+func (c *Client) GetDefaultEscalationPolicy(ctx context.Context) (*EscalationPolicy, error) {
+	var out EscalationPolicy
+	return &out, c.do(ctx, http.MethodGet, "/api/v1/escalation-policies/default", nil, nil, &out)
+}

@@ -54,3 +54,7 @@ func (c *Client) AddTeamMembers(ctx context.Context, teamID string, userIDs []st
 func (c *Client) RemoveTeamMember(ctx context.Context, teamID, userID string) error {
 	return c.do(ctx, http.MethodPost, "/api/v1/org/teams/members/remove", nil, teamMembersInput{TeamID: teamID, UserID: userID}, nil)
 }
+
+func (c *Client) ListTeams(ctx context.Context) ([]Team, error) {
+	return listAll[Team](ctx, c, "/api/v1/org/teams/list")
+}

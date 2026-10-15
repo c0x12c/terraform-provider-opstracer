@@ -61,3 +61,25 @@ func (c *Client) UpdateSchedule(ctx context.Context, in ScheduleInput) (*Schedul
 func (c *Client) DeleteSchedule(ctx context.Context, id string) error {
 	return c.do(ctx, http.MethodPost, "/api/v1/schedule/delete", nil, idRequest{ID: id}, nil)
 }
+
+func (c *Client) ListSchedules(ctx context.Context) ([]Schedule, error) {
+	return listAll[Schedule](ctx, c, "/api/v1/schedules/list")
+}
+
+// OnCall is who holds a schedule at a point in time. UserIDs is empty when the shift is uncovered.
+type OnCall struct {
+	ScheduleID string   `json:"schedule_id"`
+	At         string   `json:"at"`
+	UserIDs    []string `json:"user_ids"`
+	Until      *string  `json:"until"`
+}
+
+// GetOnCall returns the holders at the given RFC 3339 time, or now when at is empty.
+func (c *Client) GetOnCall(ctx context.Context, scheduleID, at string) (*OnCall, error) {
+	q := url.Values{"id": {scheduleID}}
+	if at != "" {
+		q.Set("at", at)
+	}
+	var out OnCall
+	return &out, c.do(ctx, http.MethodGet, "/api/v1/schedule/on-call", q, nil, &out)
+}
