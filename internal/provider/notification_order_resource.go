@@ -127,7 +127,8 @@ func (r *notificationOrderResource) Read(ctx context.Context, _ resource.ReadReq
 	resp.Diagnostics.Append(resp.State.Set(ctx, notificationOrderFromAPI(o))...)
 }
 
-func (r *notificationOrderResource) Delete(context.Context, resource.DeleteRequest, *resource.DeleteResponse) {}
+func (r *notificationOrderResource) Delete(context.Context, resource.DeleteRequest, *resource.DeleteResponse) {
+}
 
 func (r *notificationOrderResource) ImportState(ctx context.Context, _ resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), notificationOrderID)...)

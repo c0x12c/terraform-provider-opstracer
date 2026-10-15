@@ -1,0 +1,59 @@
+name: Provider CI
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.11.4
+          # The test harness needs the real binary, not the wrapper script.
+          terraform_wrapper: false
+
+      - name: Check formatting
+        shell: bash
+        run: |
+          test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+          terraform fmt -check -recursive examples
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        shell: bash
+        run: TF_ACC_TERRAFORM_PATH="$(which terraform)" go test ./...
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      # gitleaks-action needs a paid license for org repos; the CLI does not.
+      - name: Scan for secrets
+        shell: bash
+        run: |
+          go install github.com/zricethezav/gitleaks/v8@v8.21.2
+          gitleaks git . --redact -v
