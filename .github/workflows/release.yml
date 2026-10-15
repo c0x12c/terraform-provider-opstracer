@@ -25,6 +25,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      # The registry shows docs/ from the tag, so its example must name this release line.
+      - name: Check docs name this version
+        shell: bash
+        run: |
+          v="${GITHUB_REF_NAME#v}"; want="~> $(echo "$v" | cut -d. -f1,2).0"
+          for f in examples/provider/provider.tf docs/index.md README.md; do
+            grep -q "version = \"$want\"" "$f" || { echo "::error file=$f::expected version = \"$want\"; run make version VERSION=$v before tagging"; exit 1; }
+          done
+
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
