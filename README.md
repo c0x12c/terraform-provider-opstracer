@@ -45,7 +45,7 @@ terraform {
   required_providers {
     opstracer = {
       source  = "c0x12c/opstracer"
-      version = "~> 0.1"
+      version = "~> 0.2.0"
     }
   }
 }
@@ -76,6 +76,14 @@ value of `OPSTRACER_TOKEN` and nothing in the provider changes (see below).
 go test ./...          # runs the full create/update/import/destroy cycle against an in-memory fake API
 go generate ./...      # regenerates docs/ from schema descriptions and examples/
 ```
+
+### Releasing
+
+```bash
+make version VERSION=0.2.1   # updates the version shown in examples, README and docs/
+```
+
+Merge that, then tag `v0.2.1` on main. The release workflow fails if docs/ still names another version.
 
 ### Adding a resource
 
